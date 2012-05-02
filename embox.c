@@ -26,35 +26,10 @@
 // functions
 double pick_rand(void);
 
-// define structs here
-/*
-typedef struct{
-    double x[3];
-    double u[3];
-    double q;
-}particles;
 
-typedef struct{
-    double E[3];          // electric field,
-    double B[3];          // magnetic field,
-    double rho;           // charge density and
-    double J[3];          // current density.
-  }grid;
-*/
 // Main function
 int main(int argc, char **argv)
 {
-  struct particles {      // Particles have
-    double x[3];          // position,
-    double u[3];          // velocity and 
-    double q;             // charge.
-  };
-  struct grid {           // Each point in the Yi lattic has
-    double E[3];          // electric field,
-    double B[3];          // magnetic field,
-    double rho;           // charge density and
-    double J[3];          // current density.
-  };
   
   int i,j,k,n,x_pos,y_pos,z_pos;
   int dump_fields=0,dump_posns=1;
