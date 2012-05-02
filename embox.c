@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 	  /* derivatives wrt z */
 	  if (k==0){
 	    ddz_Ex = (0.0 - 0.0)/dz;
-	    ddz_Ex = (0.0 - 0.0)/dy;
+	    ddz_Ey = (0.0 - 0.0)/dy;
 	  }
 	  else {
 	    ddz_Ex = (fields[i][j][k].E[0] - fields[i][j][k-1].E[0])/dz;
