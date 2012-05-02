@@ -20,12 +20,9 @@
 #include"particles.h"
 // constants
 #define CSQUARED 8.98755179e16
-//#define SIZE 10
-//#define NPARTICLES 10//000
-//#define NSTEPS 100000
 // functions
 double pick_rand(void);
-
+void free_grid(struct grid ***data, size_t xlen, size_t ylen);
 
 // Main function
 int main(int argc, char **argv)
@@ -45,8 +42,9 @@ int main(int argc, char **argv)
   double B0=1.0e-1;
   double mu0=4.0*M_PI*10e-7,epsilon0=1.0/(mu0*CSQUARED),q=1.6e-19,q_to_m=1.75882017e11;
   double ax,ay,az;
-  struct particles charges[NPARTICLES];
-  struct grid fields[SIZE][SIZE][SIZE];
+
+  //struct particles charges[NPARTICLES];
+   //struct grid fields[SIZE][SIZE][SIZE];
 
   srand(time(NULL));
 /*
@@ -80,6 +78,36 @@ int main(int argc, char **argv)
   }
 
 
+  // MALLOC the arrays of structs
+  struct particles *charges = malloc(sizeof *charges * NPARTICLES);
+  if (charges == NULL){
+    printf("Error allocating memory for charges (Error 1)\n");
+    exit(1);
+  }
+
+  struct grid ***fields = malloc(SIZE * sizeof *fields );
+  if (fields == NULL ) {
+    printf("Error allocating memory for fields (Error 1)\n");
+    exit(1);
+  }
+  for (i=0; i < SIZE; i++){
+
+    // try to malloc second dimension!
+    fields[i] = malloc(SIZE * sizeof *fields[i]);
+    if ( fields[i] == NULL ){
+      printf("Error allocating memory for fields (Error 2)\n");
+      exit(1);
+    }
+
+    for (j=0; j<SIZE; j++) {
+      fields[i][j] = malloc(SIZE * sizeof *fields[i][j]);
+      if ( fields[i][j] == NULL ) {
+        printf("Error allocating memory for fields (Error 3)\n");
+        exit(1);
+      }
+    }
+  }
+
 
   /* Make a charge distribution */
   for (i=0;i<NPARTICLES;i++){
@@ -109,7 +137,6 @@ int main(int argc, char **argv)
       printf("%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
     }
   }
- 
   /* Initialise Fields */
   for(i=0; i<SIZE; i++){
     for(j=0; j<SIZE; j++){
@@ -123,6 +150,7 @@ int main(int argc, char **argv)
 	fields[i][j][k].J[0]=0.0;
 	fields[i][j][k].J[1]=0.0;
 	fields[i][j][k].J[2]=0.0;
+	fields[i][j][k].rho = 0.0;
 	/*
         r=dx*sqrt(pow(i-offset,2)+pow(j-offset,2)+pow(k-offset,2));
 	printf("r = %lf\n",r);
@@ -295,6 +323,10 @@ int main(int argc, char **argv)
   } /* END OF TIME EVOLUTION LOOP */
   
   
+  // FREE MEMORY JUST TO BE TIDY
+  free_grid(fields, SIZE, SIZE);
+  free(charges);
+    
   return(0); /* THE END! */
 }
 
@@ -305,3 +337,18 @@ double pick_rand(void)
   num=num/(RAND_MAX+0.0);
   return(num); // a number between 0 and 1
 }
+
+void free_grid(struct grid ***data, size_t xlen, size_t ylen)
+{
+    size_t i, j;
+    for (i=0; i<xlen; i++){
+        if (data[i] != NULL){
+            for (j=0; j<ylen; j++){
+                free(data[i][j]);
+            }
+            free(data[i]);
+        }
+    }
+    free(data);
+}
+
