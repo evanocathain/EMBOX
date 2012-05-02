@@ -46,37 +46,23 @@ int main(int argc, char **argv)
   struct grid fields[SIZE][SIZE][SIZE];
 
   srand(time(NULL));
-/*
-  // Check command line arguments
-  if (argc != 2 ) {
-    fprintf(stderr,"Usage: embox <mode>\n\n");
-    fprintf(stderr,"mode - 1=random, 2=on a circle\n");
-    exit(-1);
-  }
-  mode=atoi(argv[1]);
-*/
 
-  // Parse command line arguments, modify values if found
-  for (i=1; i<argc; i++){
-    if ( strcmp(argv[i], "-mode") == 0 ){
+  /* Parse command line arguments, modify values if found */
+  for (i=1;i<argc;i++){
+    if (strcmp(argv[i], "-mode") == 0 ){
         i++;
-        mode = atoi(argv[i]);
-    }
-    else if ( strcmp(argv[i], "-size") == 0){
+        mode=atoi(argv[i]);
+    }else if (strcmp(argv[i], "-size") == 0){
         i++;
-        SIZE = atoi(argv[i]);
-    }
-    else if ( strcmp(argv[i], "-np") == 0){
+        SIZE=atoi(argv[i]);
+    }else if (strcmp(argv[i], "-np") == 0){
         i++;
         NPARTICLES = atoi(argv[i]);
-    }
-    else if ( strcmp(argv[i], "-ns") == 0){
+    }else if (strcmp(argv[i], "-ns") == 0){
         i++;
-        NSTEPS = atoi(argv[i]);
+        NSTEPS=atoi(argv[i]);
     }
   }
-
-
 
   /* Make a charge distribution */
   for (i=0;i<NPARTICLES;i++){
@@ -200,8 +186,7 @@ int main(int argc, char **argv)
 	    ddz_Ex = (fields[i][j][k].E[0] - fields[i][j][k-1].E[0])/dz;
 	    ddz_Ey = (fields[i][j][k].E[1] - fields[i][j][k-1].E[1])/dz;
 	  }
-	  /* Magnetic field spatial derivatives, Dirichlet Boundary
-	     Conditions */
+	  /* Magnetic field spatial derivatives, Dirichlet Boundary Conditions */
 	  /* derivatives wrt x */
 	  if (i==0){ 
 	    ddx_By = (0.0 - 0.0)/dx;
