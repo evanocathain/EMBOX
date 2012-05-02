@@ -1,5 +1,9 @@
 *.swp
 embox
+embox.dSYM
+file
+*gp
+maxwell.c
 *~
 
 
