@@ -22,6 +22,7 @@
 #define CSQUARED 8.98755179e16
 // functions
 double pick_rand(void);
+void free_grid(struct grid ***data, size_t xlen, size_t ylen);
 
 
 // Main function
@@ -137,7 +138,6 @@ int main(int argc, char **argv)
       printf("%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
     }
   }
-  printf("about to intialise fields\n");
   /* Initialise Fields */
   for(i=0; i<SIZE; i++){
     for(j=0; j<SIZE; j++){
@@ -175,7 +175,6 @@ int main(int argc, char **argv)
       printf("\n");
     }
   }      
-  printf("done initialising fields");
   
   /* Time Evolution Loop                         *
    * 1. calculate rho & J                        *
@@ -325,6 +324,10 @@ int main(int argc, char **argv)
   } /* END OF TIME EVOLUTION LOOP */
   
   
+  // FREE MEMORY JUST TO BE TIDY
+  free_grid(fields, SIZE, SIZE);
+  free(charges);
+    
   return(0); /* THE END! */
 }
 
@@ -335,3 +338,18 @@ double pick_rand(void)
   num=num/(RAND_MAX+0.0);
   return(num); // a number between 0 and 1
 }
+
+void free_grid(struct grid ***data, size_t xlen, size_t ylen)
+{
+    size_t i, j;
+    for (i=0; i<xlen; i++){
+        if (data[i] != NULL){
+            for (j=0; j<ylen; j++){
+                free(data[i][j]);
+            }
+            free(data[i]);
+        }
+    }
+    free(data);
+}
+
