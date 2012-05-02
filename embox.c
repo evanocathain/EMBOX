@@ -20,9 +20,9 @@
 #include"particles.h"
 // constants
 #define CSQUARED 8.98755179e16
-#define SIZE 10
-#define NPARTICLES 10//000
-#define NSTEPS 100000
+//#define SIZE 10
+//#define NPARTICLES 10//000
+//#define NSTEPS 100000
 // functions
 double pick_rand(void);
 
@@ -30,10 +30,12 @@ double pick_rand(void);
 // Main function
 int main(int argc, char **argv)
 {
-  
+  // set default values for VARS
+  int NPARTICLES = 10, SIZE=10, NSTEPS=100000;
+
   int i,j,k,n,x_pos,y_pos,z_pos;
   int dump_fields=0,dump_posns=1;
-  int mode;
+  int mode=0;
   int offset=SIZE*0.5;
   double dt=1e-12,dx=0.03,dy=0.03,dz=0.03;
   double radius=dx,r,phi,theta;
@@ -47,14 +49,37 @@ int main(int argc, char **argv)
   struct grid fields[SIZE][SIZE][SIZE];
 
   srand(time(NULL));
-
-  /* Check command line arguments */
+/*
+  // Check command line arguments
   if (argc != 2 ) {
     fprintf(stderr,"Usage: embox <mode>\n\n");
     fprintf(stderr,"mode - 1=random, 2=on a circle\n");
     exit(-1);
   }
   mode=atoi(argv[1]);
+*/
+
+  // Parse command line arguments, modify values if found
+  for (i=1; i<argc; i++){
+    if ( strcmp(argv[i], "-mode") == 0 ){
+        i++;
+        mode = atoi(argv[i]);
+    }
+    else if ( strcmp(argv[i], "-size") == 0){
+        i++;
+        SIZE = atoi(argv[i]);
+    }
+    else if ( strcmp(argv[i], "-np") == 0){
+        i++;
+        NPARTICLES = atoi(argv[i]);
+    }
+    else if ( strcmp(argv[i], "-ns") == 0){
+        i++;
+        NSTEPS = atoi(argv[i]);
+    }
+  }
+
+
 
   /* Make a charge distribution */
   for (i=0;i<NPARTICLES;i++){
@@ -77,7 +102,7 @@ int main(int argc, char **argv)
       charges[i].u[2]=0.0;
       charges[i].q=1.0;
     } else {
-      fprintf(stderr,"No choice made for initial particle positions and velocities. Exiting.\n");
+      fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
       exit(-2);
     }
     if (dump_posns == 1){
