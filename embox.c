@@ -20,9 +20,6 @@
 #include"particles.h"
 // constants
 #define CSQUARED 8.98755179e16
-//#define SIZE 10
-//#define NPARTICLES 10//000
-//#define NSTEPS 100000
 // functions
 double pick_rand(void);
 
