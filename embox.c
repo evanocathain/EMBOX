@@ -16,6 +16,8 @@
 #include<math.h>
 #include<string.h>
 #include<time.h>
+#include"grid.h"
+#include"particles.h"
 // constants
 #define CSQUARED 8.98755179e16
 #define SIZE 10
@@ -24,6 +26,21 @@
 // functions
 double pick_rand(void);
 
+// define structs here
+/*
+typedef struct{
+    double x[3];
+    double u[3];
+    double q;
+}particles;
+
+typedef struct{
+    double E[3];          // electric field,
+    double B[3];          // magnetic field,
+    double rho;           // charge density and
+    double J[3];          // current density.
+  }grid;
+*/
 // Main function
 int main(int argc, char **argv)
 {
