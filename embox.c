@@ -18,7 +18,7 @@
 #include<time.h>
 #include"grid.h"
 #include"particles.h"
-#include"updatefields.h"
+#include"update.h"
 // constants
 #define CSQUARED 8.98755179e16
 // functions
@@ -37,10 +37,8 @@ int main(int argc, char **argv)
   int offset=SIZE*0.5;
   double dt=1e-12,dx=0.03,dy=0.03,dz=0.03;
   double radius=dx,r,phi,theta;
-  double Ex,Ey,Ez,Bx,By,Bz;
   double B0=1.0e-1;
-  double mu0=4.0*M_PI*10e-7,epsilon0=1.0/(mu0*CSQUARED),q=1.6e-19,q_to_m=1.75882017e11;
-  double ax,ay,az;
+  double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED),q=1.6e-19;
 
   //struct particles charges[NPARTICLES];
    //struct grid fields[SIZE][SIZE][SIZE];
@@ -195,36 +193,10 @@ int main(int argc, char **argv)
     
     // use rho & J to calculate update E and B fields using the curl equations
     // loop over i,j,k inside the function
-    updatefield(fields, SIZE, dx, dy, dz, dt, mu0, dump_fields);
+    updatefield(fields, SIZE, dx, dy, dz, dt, dump_fields);
     
     // calculate the corresponding Lorentz force on each particle
-        for(i=0;i<NPARTICLES;i++){        //for all particles
-	  Ex=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[0];
-	  Ey=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[1];
-	  Ez=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[2];
-	  Bx=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[0];
-	  By=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[1];
-	  Bz=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[2];
-          /* Calculate accelerations */
-	  //printf("%.15lf %.15lf %.15lf\n",Ex,Ey,Ez);
-	  ax = (q_to_m)*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
-	  ay = (q_to_m)*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
-	  az = (q_to_m)*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
-	  /* update positions */
-	  charges[i].x[0] += charges[i].u[0]*dt+(0.5)*ax*dt*dt;
-	  charges[i].x[1] += charges[i].u[1]*dt+(0.5)*ay*dt*dt;
-	  charges[i].x[2] += charges[i].u[2]*dt+(0.5)*az*dt*dt;
-	  /* update velocities */
-          charges[i].u[0] += ax*dt;
-          charges[i].u[1] += ay*dt;
-          charges[i].u[2] += az*dt;
-	  
-	  if (dump_posns == 1){
-	    //	    printf("%.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %.15lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2],Ex,Ey,Ez,ax,ay,az,dt);
-	    printf("%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
-	  }	  
-	  
-        }
+    updatecharges(charges, fields, NPARTICLES, dt, dump_posns);
     
 	/* Zero the rho and J values */
 	for(i=0; i<SIZE; i++){

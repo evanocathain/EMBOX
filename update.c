@@ -1,9 +1,11 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<math.h>
 
 #include"grid.h"
-#include"updatefields.h"
+#include"particles.h"
+#include"update.h"
 
 void updatefield(struct grid ***fields,
                  int size,
@@ -11,9 +13,9 @@ void updatefield(struct grid ***fields,
                  double dy, 
                  double dz,
                  double dt, 
-                 double mu0,
                  int dump){
 
+    // derivatives of E and B fields
     double ddx_Ey, ddx_Ez;
     double ddy_Ex, ddy_Ez;
     double ddz_Ex, ddz_Ey;
@@ -21,7 +23,11 @@ void updatefield(struct grid ***fields,
     double ddy_Bx, ddy_Bz;
     double ddz_Bx, ddz_By;
 
+    // loop variables
     int i, j, k;
+
+    // permeability of the vacuum in SI units
+    const double mu0 = 4.0*M_PI*10.0e-7;
 
 
     /* 
@@ -91,4 +97,46 @@ void updatefield(struct grid ***fields,
             } //end of k loop
         } // end of j loop
     } // end of i loop
+}
+
+void updatecharges(struct particles *charges,
+                   struct grid ***fields,
+                   int nparticles,
+                   double dt,
+                   int dump){
+
+    int i; // loop vars
+    double Ex, Ey, Ez, Bx, By, Bz; // em fields
+    double ax, ay, az; // accelerations
+    const double q_to_m=1.75882017e11; 
+
+    for (i=0; i<nparticles; i++){
+        // Currently using (int) cast
+        // probably can do something more complex here
+        Ex=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[0];
+	    Ey=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[1];
+	    Ez=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[2];
+	    Bx=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[0];
+	    By=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[1];
+	    Bz=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[2];
+
+      /* Calculate accelerations */
+	    ax = (q_to_m)*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
+	    ay = (q_to_m)*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
+	    az = (q_to_m)*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
+
+	  /* update positions */
+	    charges[i].x[0] += charges[i].u[0]*dt+(0.5)*ax*dt*dt;
+	    charges[i].x[1] += charges[i].u[1]*dt+(0.5)*ay*dt*dt;
+	    charges[i].x[2] += charges[i].u[2]*dt+(0.5)*az*dt*dt;
+
+	  /* update velocities */
+        charges[i].u[0] += ax*dt;
+        charges[i].u[1] += ay*dt;
+        charges[i].u[2] += az*dt;
+	  
+	    if (dump == 1){
+	        printf("%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+	    }
+    }
 }
