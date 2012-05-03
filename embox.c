@@ -18,6 +18,7 @@
 #include<time.h>
 #include"grid.h"
 #include"particles.h"
+#include"updatefields.h"
 // constants
 #define CSQUARED 8.98755179e16
 // functions
@@ -36,8 +37,6 @@ int main(int argc, char **argv)
   int offset=SIZE*0.5;
   double dt=1e-12,dx=0.03,dy=0.03,dz=0.03;
   double radius=dx,r,phi,theta;
-  double ddx_Ex,ddx_Ey,ddx_Ez,ddy_Ex,ddy_Ey,ddy_Ez,ddz_Ex,ddz_Ey,ddz_Ez;
-  double ddx_Bx,ddx_By,ddx_Bz,ddy_Bx,ddy_By,ddy_Bz,ddz_Bx,ddz_By,ddz_Bz;
   double Ex,Ey,Ez,Bx,By,Bz;
   double B0=1.0e-1;
   double mu0=4.0*M_PI*10e-7,epsilon0=1.0/(mu0*CSQUARED),q=1.6e-19,q_to_m=1.75882017e11;
@@ -195,89 +194,8 @@ int main(int argc, char **argv)
     }
     
     // use rho & J to calculate update E and B fields using the curl equations
-    for(i=0; i<SIZE; i++){          // for all points 
-      for(j=0; j<SIZE; j++){        // in the 3D
-	for(k=0; k<SIZE; k++){      // grid
-
-	  //	  printf("%d %d %d %lf %lf %lf\n",i,j,k,fields[i][j][k].J[0],fields[i][j][k].J[1],fields[i][j][k].J[2]);
-
-	  /* Electric field spatial derivatives, Dirchlet Boundary Conditions
-	   * NB. Neumann Boundary Conditions result in non-zero curls 
-	   * at the edges of the grid */
-	  /* derivatives wrt x */
-	  if (i==0){ 
-	    ddx_Ey = (0.0 - 0.0)/dx;
-	    ddx_Ez = (0.0 - 0.0)/dx;	    
-	  }
-	  else {
-	    ddx_Ey = (fields[i][j][k].E[1] - fields[i-1][j][k].E[1])/dx;
-	    ddx_Ez = (fields[i][j][k].E[2] - fields[i-1][j][k].E[2])/dx;
-	  }
-	  /* derivatives wrt y */
-	  if (j==0){
-	    ddy_Ex = (0.0 - 0.0)/dy;
-	    ddy_Ez = (0.0 - 0.0)/dy;
-	  }
-	  else {
-	    ddy_Ex = (fields[i][j][k].E[0] - fields[i][j-1][k].E[0])/dy;
-	    ddy_Ez = (fields[i][j][k].E[2] - fields[i][j-1][k].E[2])/dy;
-	  }
-	  /* derivatives wrt z */
-	  if (k==0){
-	    ddz_Ex = (0.0 - 0.0)/dz;
-	    ddz_Ey = (0.0 - 0.0)/dy;
-	  }
-	  else {
-	    ddz_Ex = (fields[i][j][k].E[0] - fields[i][j][k-1].E[0])/dz;
-	    ddz_Ey = (fields[i][j][k].E[1] - fields[i][j][k-1].E[1])/dz;
-	  }
-	  /* Magnetic field spatial derivatives, Dirichlet Boundary
-	     Conditions */
-	  /* derivatives wrt x */
-	  if (i==0){ 
-	    ddx_By = (0.0 - 0.0)/dx;
-	    ddx_Bz = (0.0 - 0.0)/dx;	    
-	  }
-	  else {
-	    ddx_By = (fields[i][j][k].B[1] - fields[i-1][j][k].B[1])/dx;
-	    ddx_Bz = (fields[i][j][k].B[2] - fields[i-1][j][k].B[2])/dx;
-	  }
-	  /* derivatives wrt y */
-	  if (j==0){
-	    ddy_Bx = (0.0 - 0.0)/dy;
-	    ddy_Bz = (0.0 - 0.0)/dy;
-	  }
-	  else {
-	    ddy_Bx = (fields[i][j][k].B[0] - fields[i][j-1][k].B[0])/dy;
-	    ddy_Bz = (fields[i][j][k].B[2] - fields[i][j-1][k].B[2])/dy;
-	  }
-	  /* derivatives wrt z */
-	  if (k==0){
-	    ddz_Bx = (0.0 - 0.0)/dz;
-	    ddz_By = (0.0 - 0.0)/dy;
-	  }
-	  else {
-	    ddz_Bx = (fields[i][j][k].B[0] - fields[i][j][k-1].B[0])/dz;
-	    ddz_By = (fields[i][j][k].B[1] - fields[i][j][k-1].B[1])/dz;
-	  }
-
-	  /* do the field updates */
-	  fields[i][j][k].E[0] += dt*(ddy_Bz - ddz_By - mu0*fields[i][j][k].J[0]);
-	  fields[i][j][k].E[1] += dt*(ddz_Bx - ddx_Bz - mu0*fields[i][j][k].J[1]);
-	  fields[i][j][k].E[2] += dt*(ddx_By - ddy_Bx - mu0*fields[i][j][k].J[2]);
-	  fields[i][j][k].B[0] += dt*(ddz_Ey - ddy_Ez);
-	  fields[i][j][k].B[1] += dt*(ddx_Ez - ddz_Ex);
-	  fields[i][j][k].B[2] += dt*(ddy_Ex - ddx_Ey);
-	  
-	  if (dump_fields == 1) {
-	    printf("%d %d %d %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf\n",i,j,k,fields[i][j][k].E[0],fields[i][j][k].E[1],fields[i][j][k].E[2],fields[i][j][k].B[0],fields[i][j][k].B[1],fields[i][j][k].B[2],fields[i][j][k].J[0],fields[i][j][k].J[1],fields[i][j][k].J[2]);
-	  }
-	}
-      }
-      if (dump_fields == 1){
-	printf("\n");
-      }
-    }
+    // loop over i,j,k inside the function
+    updatefield(fields, SIZE, dx, dy, dz, dt, mu0, dump_fields);
     
     // calculate the corresponding Lorentz force on each particle
         for(i=0;i<NPARTICLES;i++){        //for all particles
