@@ -8,7 +8,7 @@
 #include"initialise.h"
 #include"embox_funcs.h"
 
-void initialise_box(struct particles *charges,
+void initialise_distn_box(struct particles *charges,
                     int nparticles, 
                     int size){
 
@@ -26,7 +26,7 @@ void initialise_box(struct particles *charges,
     }
 }
 
-void initialise_sphere(struct particles *charges,
+void initialise_distn_sphere(struct particles *charges,
                        int nparticles,
                        int size,
                        double dx){

@@ -1,3 +1,4 @@
+all: embox 
 embox_funcs.o:embox_funcs.c embox_funcs.h grid.h
 	gcc -Wall embox_funcs.c -g -c
 
