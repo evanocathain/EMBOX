@@ -7,7 +7,29 @@
 #include"particles.h"
 #include"update.h"
 
-void updatefield(struct grid ***fields,
+void update_field_current(struct particles *charges,
+                          struct grid ***fields,
+                          int nparticles){
+
+    double q = 1.60217646e-19;
+    int i, x_pos, y_pos, z_pos;  // loop var
+
+    for(i=0; i<nparticles; i++){
+        // get approximation to charge position (maybe better algorithm later)
+        x_pos=(int)charges[i].x[0];
+        y_pos=(int)charges[i].x[1];
+        z_pos=(int)charges[i].x[2];
+
+        // update the relevant field location
+        fields[x_pos][y_pos][z_pos].rho += q;
+        fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].u[0];
+        fields[x_pos][y_pos][z_pos].J[1]+=q*charges[i].u[1];
+        fields[x_pos][y_pos][z_pos].J[2]+=q*charges[i].u[2];
+    }
+
+}
+
+void update_field_strength(struct grid ***fields,
                  int size,
                  double dx, 
                  double dy, 
@@ -99,7 +121,7 @@ void updatefield(struct grid ***fields,
     } // end of i loop
 }
 
-void updatecharges(struct particles *charges,
+void update_charge_posns(struct particles *charges,
                    struct grid ***fields,
                    int nparticles,
                    double dt,

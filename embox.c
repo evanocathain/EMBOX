@@ -37,22 +37,13 @@ int main(int argc, char **argv)
   int mode=0;
   double dt=1e-12,dx=0.03,dy=0.03,dz=0.03;
   double B0=1.0e-1;
-  double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED),q=1.6e-19;
+  double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED);
 
   //struct particles charges[NPARTICLES];
    //struct grid fields[SIZE][SIZE][SIZE];
 
   srand(time(NULL));
-/*
-  // Check command line arguments
-  if (argc != 2 ) {
-    fprintf(stderr,"Usage: embox <mode>\n\n");
-    fprintf(stderr,"mode - 1=random, 2=on a circle\n");
-    exit(-1);
-  }
-  mode=atoi(argv[1]);
-*/
-
+  
   // Parse command line arguments, modify values if found
   for (i=1; i<argc; i++){
     if ( strcmp(argv[i], "-mode") == 0 ){
@@ -72,6 +63,13 @@ int main(int argc, char **argv)
         NSTEPS = atoi(argv[i]);
     }
   }
+  
+  
+    if (mode == 0){ // mode hasn't been set. 
+        fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
+        exit(-2);
+    }
+
 
 
   // MALLOC the arrays of structs
@@ -113,12 +111,7 @@ int main(int argc, char **argv)
     else if (mode==2) {
         initialise_sphere(charges, NPARTICLES, SIZE, dx);
     }
-    else {
-      fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
-      exit(-2);
-    }
-  
-
+    
   /* Initialise Fields */
   for(i=0; i<SIZE; i++){
     for(j=0; j<SIZE; j++){
@@ -166,22 +159,14 @@ int main(int argc, char **argv)
     /* 1. Calculate rho & J */
     // need to zero rho and J everywhere before calculating each time
     // maybe do it as last thing in time evo. loop somehow
-    for(i=0; i<NPARTICLES; i++){
-      x_pos=(int)charges[i].x[0];
-      y_pos=(int)charges[i].x[1];
-      z_pos=(int)charges[i].x[2];
-      fields[x_pos][y_pos][z_pos].rho += q;
-      fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].u[0];
-      fields[x_pos][y_pos][z_pos].J[1]+=q*charges[i].u[1];
-      fields[x_pos][y_pos][z_pos].J[2]+=q*charges[i].u[2];
-    }
+    update_field_current(charges, fields, NPARTICLES);
     
     // use rho & J to calculate update E and B fields using the curl equations
     // loop over i,j,k inside the function
-    updatefield(fields, SIZE, dx, dy, dz, dt, dump_fields);
+    update_field_strength(fields, SIZE, dx, dy, dz, dt, dump_fields);
     
     // calculate the corresponding Lorentz force on each particle
-    updatecharges(charges, fields, NPARTICLES, dt, dump_posns);
+    update_charge_posns(charges, fields, NPARTICLES, dt, dump_posns);
     
     // Zero the rho and J values in "fields"
     resetfield_rho_j(fields, SIZE);
@@ -195,26 +180,4 @@ int main(int argc, char **argv)
     
   return(0); /* THE END! */
 }
-/*
-double pick_rand(void)
-{
-  double num;
-  num=(double)rand();
-  num=num/(RAND_MAX+0.0);
-  return(num); // a number between 0 and 1
-}
 
-void free_grid(struct grid ***data, size_t xlen, size_t ylen)
-{
-    size_t i, j;
-    for (i=0; i<xlen; i++){
-        if (data[i] != NULL){
-            for (j=0; j<ylen; j++){
-                free(data[i][j]);
-            }
-            free(data[i]);
-        }
-    }
-    free(data);
-}
-*/
