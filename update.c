@@ -140,3 +140,18 @@ void updatecharges(struct particles *charges,
 	    }
     }
 }
+
+void resetfield_rho_j(struct grid ***fields, int size){
+    int i, j, k; // loop vars
+
+    for(i=0; i<size; i++){
+	  for(j=0; j<size; j++){
+	    for(k=0; k<size; k++){
+	      fields[i][j][k].rho=0.0;
+	      fields[i][j][k].J[0]=0.0;
+	      fields[i][j][k].J[1]=0.0;
+	      fields[i][j][k].J[2]=0.0;
+	    }
+	  }
+	}
+}

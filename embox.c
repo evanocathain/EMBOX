@@ -19,11 +19,12 @@
 #include"grid.h"
 #include"particles.h"
 #include"update.h"
+#include"embox_funcs.h"
+#include"initialise.h"
+
 // constants
 #define CSQUARED 8.98755179e16
 // functions
-double pick_rand(void);
-void free_grid(struct grid ***data, size_t xlen, size_t ylen);
 
 // Main function
 int main(int argc, char **argv)
@@ -34,9 +35,7 @@ int main(int argc, char **argv)
   int i,j,k,n,x_pos,y_pos,z_pos;
   int dump_fields=0,dump_posns=1;
   int mode=0;
-  int offset=SIZE*0.5;
   double dt=1e-12,dx=0.03,dy=0.03,dz=0.03;
-  double radius=dx,r,phi,theta;
   double B0=1.0e-1;
   double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED),q=1.6e-19;
 
@@ -107,33 +106,19 @@ int main(int argc, char **argv)
 
 
   /* Make a charge distribution */
-  for (i=0;i<NPARTICLES;i++){
+  /* DEPENDING ON MODE SWITCH VALUE */
     if (mode==1) {
-      charges[i].x[0]=(SIZE-1)*pick_rand();
-      charges[i].x[1]=(SIZE-1)*pick_rand();
-      charges[i].x[2]=(SIZE-1)*pick_rand();
-      charges[i].u[0]=0;
-      charges[i].u[1]=0;
-      charges[i].u[2]=0;
-      charges[i].q=1.0;
-    }else if (mode==2) {
-      phi=(2*M_PI*pick_rand());                   // between 0 and 2*M_PI
-      theta=(M_PI*pick_rand());                   // between 0 and +M_PI
-      charges[i].x[0]=offset+radius*cos(phi)*sin(theta);
-      charges[i].x[1]=offset+radius*sin(phi)*sin(theta);
-      charges[i].x[2]=offset+radius*cos(theta);
-      charges[i].u[0]=0.0;
-      charges[i].u[1]=0.0;
-      charges[i].u[2]=0.0;
-      charges[i].q=1.0;
-    } else {
+        initialise_box(charges, NPARTICLES, SIZE);
+    }
+    else if (mode==2) {
+        initialise_sphere(charges, NPARTICLES, SIZE, dx);
+    }
+    else {
       fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
       exit(-2);
     }
-    if (dump_posns == 1){
-      printf("%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
-    }
-  }
+  
+
   /* Initialise Fields */
   for(i=0; i<SIZE; i++){
     for(j=0; j<SIZE; j++){
@@ -198,17 +183,8 @@ int main(int argc, char **argv)
     // calculate the corresponding Lorentz force on each particle
     updatecharges(charges, fields, NPARTICLES, dt, dump_posns);
     
-	/* Zero the rho and J values */
-	for(i=0; i<SIZE; i++){
-	  for(j=0; j<SIZE; j++){
-	    for(k=0; k<SIZE; k++){
-	      fields[i][j][k].rho=0.0;
-	      fields[i][j][k].J[0]=0.0;
-	      fields[i][j][k].J[1]=0.0;
-	      fields[i][j][k].J[2]=0.0;
-	    }
-	  }
-	}      
+    // Zero the rho and J values in "fields"
+    resetfield_rho_j(fields, SIZE);
 	
   } /* END OF TIME EVOLUTION LOOP */
   
@@ -219,7 +195,7 @@ int main(int argc, char **argv)
     
   return(0); /* THE END! */
 }
-
+/*
 double pick_rand(void)
 {
   double num;
@@ -241,4 +217,4 @@ void free_grid(struct grid ***data, size_t xlen, size_t ylen)
     }
     free(data);
 }
-
+*/
