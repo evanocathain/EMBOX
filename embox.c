@@ -30,19 +30,27 @@
 int main(int argc, char **argv)
 {
     // set default values for VARS
-    int NPARTICLES = 10, SIZE=10, NSTEPS=100000;
+    int NPARTICLES = 10, SIZE=10, NSTEPS=10000;
 
     int i,j,k,n;
     int dump_fields=0,dump_posns=1;
     int mode=0;
-    double dt=1e-12,dx=0.03,dy=0.03,dz=0.03;
+    double dt=1e-11,dx=0.03,dy=0.03,dz=0.03;
+    double r,x,y,z,radius=dx,offset;
     double B0=1.0e-1;
     double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED);
-    FILE *positions;
+    FILE *positions_fp,*fields_fp;
 
     srand(time(NULL));
 
     // Parse command line arguments, modify values if found
+    if (argc == 1){
+      fprintf(stdout,"Usage: embox -mode [1|2] <options> \n\n");
+      fprintf(stdout,"Options:\t -mode\t 1=uniform particle dist., 2=distributed on a sphere\n");
+      fprintf(stdout,"\t\t -size\t dimenstion of box \(default=10\)\n");
+      fprintf(stdout,"\t\t -np\t number of particles to simulate \(default=10\)\n");
+      fprintf(stdout,"\t\t -ns\t number of integration steps \(default=10000\)\n\n");
+    }
     for (i=1; i<argc; i++){
         if ( strcmp(argv[i], "-mode") == 0 ){
             i++;
@@ -60,9 +68,7 @@ int main(int argc, char **argv)
             i++;
             NSTEPS = atoi(argv[i]);
         }
-    }
-  
-  
+    }  
     if (mode == 0){ // mode hasn't been set. 
         fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
         exit(-2);
@@ -100,6 +106,8 @@ int main(int argc, char **argv)
     }
 
 
+    offset=SIZE*0.5;
+
   /* Make a charge distribution */
   /* DEPENDING ON MODE SWITCH VALUE */
     if (mode==1) {
@@ -109,6 +117,10 @@ int main(int argc, char **argv)
         initialise_distn_sphere(charges, NPARTICLES, SIZE, dx);
     }
     
+
+    // Open file for outputting the initial field values
+    fields_fp = fopen("fields","w");
+
   /* Initialise Fields */
     /* THIS SHOULDPROBABLY GO INTO INITIALISE.C ONCE WE'VE FIGURED OUT
      * A SENSIBLE FIELD CONFIGURATION*/
@@ -125,20 +137,33 @@ int main(int argc, char **argv)
 	fields[i][j][k].J[1]=0.0;
 	fields[i][j][k].J[2]=0.0;
 	fields[i][j][k].rho = 0.0;
-	/*
-        r=dx*sqrt(pow(i-offset,2)+pow(j-offset,2)+pow(k-offset,2));
-	printf("r = %lf\n",r);
-	fields[i][j][k].E[0]=0.0;
-	fields[i][j][k].E[1]=0.0;
-	fields[i][j][k].E[2]=0.0;
-	fields[i][j][k].B[0]=B0*(pow(radius,3)/pow(r,5))*3.0*(i-offset)*dx*(k-offset)*dx;
-	fields[i][j][k].B[1]=B0*(pow(radius,3)/pow(r,5))*3.0*(j-offset)*dx*(k-offset)*dx;
-	fields[i][j][k].B[2]=B0*(pow(radius,3)/pow(r,5))*(3.0*pow((k-offset)*dx,2)-pow(r,2));
-	printf("Bx= %.15lf By= %.15lf Bz= %.15lf\n",fields[i][j][k].B[0],fields[i][j][k].B[1],fields[i][j][k].B[2]);
+	///*
+	x=(i-offset)*dx;
+	y=(j-offset)*dy;
+	z=(k-offset)*dz;
+	if (i==offset && j==offset && k==offset){
+	  r=0.01*dx;
+	  x=y=z=0.0;
+	  fields[i][j][k].E[0]=0.0;
+	  fields[i][j][k].E[1]=0.0;
+	  fields[i][j][k].E[2]=0.0;
+	  fields[i][j][k].B[0]=0.0;
+	  fields[i][j][k].B[1]=0.0;
+	  fields[i][j][k].B[2]=0.0;
+	}else {
+	  r=sqrt(pow(x,2)+pow(y,2)+pow(z,2));
+	  fields[i][j][k].E[0]=0.0;
+	  fields[i][j][k].E[1]=0.0;
+	  fields[i][j][k].E[2]=0.0;
+	  fields[i][j][k].B[0]=B0*(pow(radius,3)/pow(r,5))*3.0*x*z;
+	  fields[i][j][k].B[1]=B0*(pow(radius,3)/pow(r,5))*3.0*y*z;
+	  fields[i][j][k].B[2]=B0*(pow(radius,3)/pow(r,5))*(3.0*pow(z,2)-pow(r,2));
+	}
+	fprintf(fields_fp,"Bx= %.15lf By= %.15lf Bz= %.15lf x= %lf y= %lf z= %lf\n",fields[i][j][k].B[0],fields[i][j][k].B[1],fields[i][j][k].B[2],x,y,z);
 	fields[i][j][k].J[0]=0.0;
 	fields[i][j][k].J[1]=0.0;
 	fields[i][j][k].J[2]=0.0;
-	*/
+	//*/
 	if (dump_fields==1){
 	  printf("%d %d %d %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf %.2lf\n",i,j,k,fields[i][j][k].E[0],fields[i][j][k].E[1],fields[i][j][k].E[2],fields[i][j][k].B[0],fields[i][j][k].B[1],fields[i][j][k].B[2],fields[i][j][k].J[0],fields[i][j][k].J[1],fields[i][j][k].J[2]);
 	}
@@ -152,7 +177,7 @@ int main(int argc, char **argv)
 
 
   // Open file for outputting positions of particles
-  positions = fopen("positions","w");
+  positions_fp = fopen("positions","w");
 
 
   
@@ -172,7 +197,7 @@ int main(int argc, char **argv)
         update_field_strength(fields, SIZE, dx, dy, dz, dt, dump_fields);
     
         // calculate the corresponding Lorentz force on each particle
-        update_charge_posns(charges, fields, NPARTICLES, dt, dump_posns, positions);
+        update_charge_posns(charges, fields, NPARTICLES, dt, dump_posns, positions_fp);
     
         // Zero the rho and J values in "fields"
         resetfield_rho_j(fields, SIZE);
@@ -184,7 +209,8 @@ int main(int argc, char **argv)
     free_grid(fields, SIZE, SIZE);
     free(charges);
     
-    fclose(positions);
+    fclose(positions_fp);
+    fclose(fields_fp);
 
     return(0); /* THE END! */
 }
