@@ -125,7 +125,8 @@ void update_charge_posns(struct particles *charges,
                    struct grid ***fields,
                    int nparticles,
                    double dt,
-                   int dump){
+		   int dump,
+		   FILE *positions){
 
     int i; // loop vars
     double Ex, Ey, Ez, Bx, By, Bz; // em fields
@@ -158,7 +159,7 @@ void update_charge_posns(struct particles *charges,
         charges[i].u[2] += az*dt;
 	  
 	    if (dump == 1){
-	        printf("%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+	      fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
 	    }
     }
 }
