@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     int mode=0;
     double dt=1e-11,dx=0.03,dy=0.03,dz=0.03;
     double r,x,y,z,radius=dx,offset;
-    double B0=1.0e-1;
+    double B0=5.0e-1;
     double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED);
     FILE *positions_fp,*fields_fp;
 
@@ -47,9 +47,9 @@ int main(int argc, char **argv)
     if (argc == 1){
       fprintf(stdout,"Usage: embox -mode [1|2] <options> \n\n");
       fprintf(stdout,"Options:\t -mode\t 1=uniform particle dist., 2=distributed on a sphere\n");
-      fprintf(stdout,"\t\t -size\t dimenstion of box \(default=10\)\n");
-      fprintf(stdout,"\t\t -np\t number of particles to simulate \(default=10\)\n");
-      fprintf(stdout,"\t\t -ns\t number of integration steps \(default=10000\)\n\n");
+      fprintf(stdout,"\t\t -size\t dimenstion of box [default=10] \n");
+      fprintf(stdout,"\t\t -np\t number of particles to simulate [default=10] \n");
+      fprintf(stdout,"\t\t -ns\t number of integration steps [default=10000] \n\n");
     }
     for (i=1; i<argc; i++){
         if ( strcmp(argv[i], "-mode") == 0 ){
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   /* Make a charge distribution */
   /* DEPENDING ON MODE SWITCH VALUE */
     if (mode==1) {
-        initialise_distn_box(charges, NPARTICLES, SIZE);
+      initialise_distn_box(charges, NPARTICLES, SIZE, dx, dy, dz);
     }
     else if (mode==2) {
         initialise_distn_sphere(charges, NPARTICLES, SIZE, dx);
@@ -197,7 +197,7 @@ int main(int argc, char **argv)
         update_field_strength(fields, SIZE, dx, dy, dz, dt, dump_fields);
     
         // calculate the corresponding Lorentz force on each particle
-        update_charge_posns(charges, fields, NPARTICLES, dt, dump_posns, positions_fp);
+        update_charge_posns(charges, fields, NPARTICLES, dt, dx, dy, dz, dump_posns, positions_fp);
     
         // Zero the rho and J values in "fields"
         resetfield_rho_j(fields, SIZE);

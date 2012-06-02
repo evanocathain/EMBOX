@@ -15,16 +15,16 @@ void update_field_current(struct particles *charges,
     int i, x_pos, y_pos, z_pos;  // loop var
 
     for(i=0; i<nparticles; i++){
-        // get approximation to charge position (maybe better algorithm later)
-        x_pos=(int)charges[i].x[0];
-        y_pos=(int)charges[i].x[1];
-        z_pos=(int)charges[i].x[2];
+      // get approximate charge position in 3-D
+      x_pos=(int)charges[i].x[0];
+      y_pos=(int)charges[i].x[1];
+      z_pos=(int)charges[i].x[2];
 
-        // update the relevant field location
-        fields[x_pos][y_pos][z_pos].rho += q;
-        fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].u[0];
-        fields[x_pos][y_pos][z_pos].J[1]+=q*charges[i].u[1];
-        fields[x_pos][y_pos][z_pos].J[2]+=q*charges[i].u[2];
+      // update the relevant field location
+      fields[x_pos][y_pos][z_pos].rho += q;
+      fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].u[0];
+      fields[x_pos][y_pos][z_pos].J[1]+=q*charges[i].u[1];
+      fields[x_pos][y_pos][z_pos].J[2]+=q*charges[i].u[2];
     }
 
 }
@@ -122,45 +122,49 @@ void update_field_strength(struct grid ***fields,
 }
 
 void update_charge_posns(struct particles *charges,
-                   struct grid ***fields,
-                   int nparticles,
-                   double dt,
-		   int dump,
-		   FILE *positions){
-
+			 struct grid ***fields,
+			 int nparticles,
+			 double dt,
+			 double dx,
+			 double dy,
+			 double dz,
+			 int dump,
+			 FILE *positions){
+  
     int i; // loop vars
     double Ex, Ey, Ez, Bx, By, Bz; // em fields
     double ax, ay, az; // accelerations
     const double q_to_m=1.75882017e11; 
-
+    
     for (i=0; i<nparticles; i++){
-        // Currently using (int) cast
-        // probably can do something more complex here
-        Ex=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[0];
-	    Ey=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[1];
-	    Ez=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].E[2];
-	    Bx=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[0];
-	    By=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[1];
-	    Bz=fields[(int)charges[i].x[0]][(int)charges[i].x[1]][(int)charges[i].x[2]].B[2];
+      // Currently using (int) cast
+      // probably can do something more complex here
+      Ex=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].E[0];
+      Ey=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].E[1];
+      Ez=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].E[2];
+      Bx=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].B[0];
+      By=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].B[1];
+      Bz=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].B[2];
+      //      printf("Location %d %d %d\n", (int)(charges[i].x[0]/dx),(int)(charges[i].x[1]/dy),(int)(charges[i].x[2]/dz));
 
       /* Calculate accelerations */
-	    ax = (q_to_m)*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
-	    ay = (q_to_m)*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
-	    az = (q_to_m)*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
+      ax = (q_to_m)*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
+      ay = (q_to_m)*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
+      az = (q_to_m)*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
+      
+      /* update positions */
+      charges[i].x[0] += charges[i].u[0]*dt+(0.5)*ax*dt*dt;
+      charges[i].x[1] += charges[i].u[1]*dt+(0.5)*ay*dt*dt;
+      charges[i].x[2] += charges[i].u[2]*dt+(0.5)*az*dt*dt;
 
-	  /* update positions */
-	    charges[i].x[0] += charges[i].u[0]*dt+(0.5)*ax*dt*dt;
-	    charges[i].x[1] += charges[i].u[1]*dt+(0.5)*ay*dt*dt;
-	    charges[i].x[2] += charges[i].u[2]*dt+(0.5)*az*dt*dt;
-
-	  /* update velocities */
-        charges[i].u[0] += ax*dt;
-        charges[i].u[1] += ay*dt;
-        charges[i].u[2] += az*dt;
-	  
-	    if (dump == 1){
-	      fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
-	    }
+      /* update velocities */
+      charges[i].u[0] += ax*dt;
+      charges[i].u[1] += ay*dt;
+      charges[i].u[2] += az*dt;
+      
+      if (dump == 1){
+	fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+      }
     }
 }
 
@@ -168,13 +172,13 @@ void resetfield_rho_j(struct grid ***fields, int size){
     int i, j, k; // loop vars
 
     for(i=0; i<size; i++){
-	  for(j=0; j<size; j++){
-	    for(k=0; k<size; k++){
-	      fields[i][j][k].rho=0.0;
-	      fields[i][j][k].J[0]=0.0;
-	      fields[i][j][k].J[1]=0.0;
-	      fields[i][j][k].J[2]=0.0;
-	    }
-	  }
+      for(j=0; j<size; j++){
+	for(k=0; k<size; k++){
+	  fields[i][j][k].rho=0.0;
+	  fields[i][j][k].J[0]=0.0;
+	  fields[i][j][k].J[1]=0.0;
+	  fields[i][j][k].J[2]=0.0;
 	}
+      }
+    }
 }

@@ -9,16 +9,19 @@
 #include"embox_funcs.h"
 
 void initialise_distn_box(struct particles *charges,
-                    int nparticles, 
-                    int size){
+			  int nparticles, 
+			  int size,
+			  double dx,
+			  double dy,
+			  double dz){
 
     int i; // loop variable
 
     for (i=0; i<nparticles; i++){
         // initialise all particles
-        charges[i].x[0]=(size-1)*pick_rand();
-        charges[i].x[1]=(size-1)*pick_rand();
-        charges[i].x[2]=(size-1)*pick_rand();
+        charges[i].x[0]=(size-1)*dx*pick_rand();
+        charges[i].x[1]=(size-1)*dy*pick_rand();
+        charges[i].x[2]=(size-1)*dz*pick_rand();
         charges[i].u[0]=0;
         charges[i].u[1]=0;
         charges[i].u[2]=0;
@@ -32,7 +35,7 @@ void initialise_distn_sphere(struct particles *charges,
                        double dx){
 
     int i; // loop variable
-    int offset = size*0.5; // should offset be a double?
+    double offset = size*dx*0.5;
     double radius=dx,phi,theta;
 
     for (i=0; i<nparticles; i++){
