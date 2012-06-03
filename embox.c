@@ -197,7 +197,7 @@ int main(int argc, char **argv)
         update_field_strength(fields, SIZE, dx, dy, dz, dt, dump_fields);
     
         // calculate the corresponding Lorentz force on each particle
-        update_charge_posns(charges, fields, NPARTICLES, dt, dx, dy, dz, dump_posns, positions_fp);
+        update_charge_posns(charges, fields, NPARTICLES, dt, dx, dy, dz, SIZE, dump_posns, positions_fp);
     
         // Zero the rho and J values in "fields"
         resetfield_rho_j(fields, SIZE);

@@ -20,6 +20,7 @@ void update_charge_posns(struct particles *charges,
 			 double dx,
 			 double dy,
 			 double dz,
+			 int size,
 			 int dump,
 			 FILE *positions);
 

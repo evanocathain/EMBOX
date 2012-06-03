@@ -128,39 +128,54 @@ void update_charge_posns(struct particles *charges,
 			 double dx,
 			 double dy,
 			 double dz,
+			 int size,
 			 int dump,
 			 FILE *positions){
   
     int i; // loop vars
+    int x_pos, y_pos, z_pos;
     double Ex, Ey, Ez, Bx, By, Bz; // em fields
     double ax, ay, az; // accelerations
+    double x_update, y_update, z_update;
     const double q_to_m=1.75882017e11; 
     
     for (i=0; i<nparticles; i++){
       // Currently using (int) cast
       // probably can do something more complex here
-      Ex=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].E[0];
-      Ey=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].E[1];
-      Ez=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].E[2];
-      Bx=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].B[0];
-      By=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].B[1];
-      Bz=fields[(int)(charges[i].x[0]/dx)][(int)(charges[i].x[1]/dy)][(int)(charges[i].x[2]/dz)].B[2];
-      //      printf("Location %d %d %d\n", (int)(charges[i].x[0]/dx),(int)(charges[i].x[1]/dy),(int)(charges[i].x[2]/dz));
+      x_pos = (int)(charges[i].x[0]/dx);
+      y_pos = (int)(charges[i].x[1]/dy);
+      z_pos = (int)(charges[i].x[2]/dz);
+      Ex=fields[x_pos][y_pos][z_pos].E[0];
+      Ey=fields[x_pos][y_pos][z_pos].E[1];
+      Ez=fields[x_pos][y_pos][z_pos].E[2];
+      Bx=fields[x_pos][y_pos][z_pos].B[0];
+      By=fields[x_pos][y_pos][z_pos].B[1];
+      Bz=fields[x_pos][y_pos][z_pos].B[2];
 
       /* Calculate accelerations */
       ax = (q_to_m)*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
       ay = (q_to_m)*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
       az = (q_to_m)*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
       
-      /* update positions */
-      charges[i].x[0] += charges[i].u[0]*dt+(0.5)*ax*dt*dt;
-      charges[i].x[1] += charges[i].u[1]*dt+(0.5)*ay*dt*dt;
-      charges[i].x[2] += charges[i].u[2]*dt+(0.5)*az*dt*dt;
-
-      /* update velocities */
+      /* update positions & velocities */
+      x_update = charges[i].u[0]*dt+(0.5)*ax*dt*dt;
+      y_update = charges[i].u[1]*dt+(0.5)*ay*dt*dt;
+      z_update = charges[i].u[2]*dt+(0.5)*az*dt*dt;
+      charges[i].x[0] += x_update;
+      charges[i].x[1] += y_update;
+      charges[i].x[2] += z_update;
       charges[i].u[0] += ax*dt;
       charges[i].u[1] += ay*dt;
       charges[i].u[2] += az*dt;
+      if ((charges[i].x[0] >= (size-1)*dx) || (charges[i].x[1] >= (size-1)*dy) || (charges[i].x[2] >= (size-1)*dz) || (charges[i].x[0] <= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
+	charges[i].x[0] = size*dx*0.5;
+	charges[i].x[1] = size*dy*0.5;
+	charges[i].x[2] = size*dz*0.5;
+	charges[i].u[0] = 0.0;
+	charges[i].u[1] = 0.0;
+	charges[i].u[2] = 0.0;
+      }
+      //      printf("%f %f %f\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
       
       if (dump == 1){
 	fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
