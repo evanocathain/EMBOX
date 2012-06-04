@@ -153,9 +153,9 @@ void update_charge_posns(struct particles *charges,
       Bz=fields[x_pos][y_pos][z_pos].B[2];
 
       /* Calculate accelerations */
-      ax = (q_to_m)*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
-      ay = (q_to_m)*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
-      az = (q_to_m)*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
+      ax = (q_to_m)*charges[i].q*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
+      ay = (q_to_m)*charges[i].q*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
+      az = (q_to_m)*charges[i].q*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
       
       /* update positions & velocities */
       x_update = charges[i].u[0]*dt+(0.5)*ax*dt*dt;
