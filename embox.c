@@ -48,26 +48,38 @@ int main(int argc, char **argv)
       fprintf(stdout,"Usage: embox -mode [1|2] <options> \n\n");
       fprintf(stdout,"Options:\t -mode\t 1=uniform particle dist., 2=distributed on a sphere\n");
       fprintf(stdout,"\t\t -size\t dimenstion of box [default=10] \n");
+      fprintf(stdout,"\t\t -dx\t size of grid spacing in metres  [default=0.030] \n");
+      fprintf(stdout,"\t\t -B\t B field in Tesla  [default=0.5] \n");      
       fprintf(stdout,"\t\t -np\t number of particles to simulate [default=10] \n");
       fprintf(stdout,"\t\t -ns\t number of integration steps [default=10000] \n\n");
     }
     for (i=1; i<argc; i++){
-        if ( strcmp(argv[i], "-mode") == 0 ){
-            i++;
-            mode = atoi(argv[i]);
-        }
-        else if ( strcmp(argv[i], "-size") == 0){
-            i++;
-            SIZE = atoi(argv[i]);
-        }
-        else if ( strcmp(argv[i], "-np") == 0){
-            i++;
-            NPARTICLES = atoi(argv[i]);
-        }
-        else if ( strcmp(argv[i], "-ns") == 0){
-            i++;
-            NSTEPS = atoi(argv[i]);
-        }
+      if ( strcmp(argv[i], "-mode") == 0 ){
+	i++;
+	mode = atoi(argv[i]);
+      }
+      else if ( strcmp(argv[i], "-size") == 0){
+	i++;
+	SIZE = atoi(argv[i]);
+      }
+      else if ( strcmp(argv[i], "-dx") == 0){
+	i++;
+	dx = atof(argv[i]);
+	dy = dx;
+	dz = dx;
+      }
+      else if ( strcmp(argv[i], "-B") == 0) {
+	i++;
+	B0 = atof(argv[i]);
+      }
+      else if ( strcmp(argv[i], "-np") == 0){
+	i++;
+	NPARTICLES = atoi(argv[i]);
+      }
+      else if ( strcmp(argv[i], "-ns") == 0){
+	i++;
+	NSTEPS = atoi(argv[i]);
+      }
     }  
     if (mode == 0){ // mode hasn't been set. 
       fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
