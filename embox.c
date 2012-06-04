@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     double r,x,y,z,radius=dx,offset;
     double B0=5.0e-1;
     double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED);
-    FILE *positions_fp,*fields_fp;
+    FILE *positions_fp,*charges_fp,*fields_fp;
 
     srand(time(NULL));
 
@@ -70,25 +70,25 @@ int main(int argc, char **argv)
         }
     }  
     if (mode == 0){ // mode hasn't been set. 
-        fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
-        exit(-2);
+      fprintf(stderr,"No choice made for initial particle positions and velocities.\nUse \"-mode [1|2]\" to select simulation mode\nExiting.\n");
+      exit(-2);
     }
 
 
     // MALLOC the arrays of structs  
     struct particles *charges = malloc(sizeof *charges * NPARTICLES);
     if (charges == NULL){
-        printf("Error allocating memory for charges (Error 1)\n");
-        exit(1);
+      fprintf(stderr,"Error allocating memory for charges (Error 1)\n");
+      exit(1);
     }
 
     struct grid ***fields = malloc(SIZE * sizeof *fields );
     if (fields == NULL ) {
-        printf("Error allocating memory for fields (Error 1)\n");
-        exit(1);
+      fprintf(stderr,"Error allocating memory for fields (Error 1)\n");
+      exit(1);
     }
     for (i=0; i < SIZE; i++){
-
+      
         // try to malloc second dimension!
         fields[i] = malloc(SIZE * sizeof *fields[i]);
         if ( fields[i] == NULL ){
@@ -110,11 +110,14 @@ int main(int argc, char **argv)
 
   /* Make a charge distribution */
   /* DEPENDING ON MODE SWITCH VALUE */
+
+    charges_fp = fopen("charges","w");
+
     if (mode==1) {
-      initialise_distn_box(charges, NPARTICLES, SIZE, dx, dy, dz);
+      initialise_distn_box(charges, NPARTICLES, SIZE, dx, dy, dz, charges_fp);
     }
     else if (mode==2) {
-        initialise_distn_sphere(charges, NPARTICLES, SIZE, dx);
+      initialise_distn_sphere(charges, NPARTICLES, SIZE, dx, charges_fp);
     }
     
 
@@ -211,6 +214,7 @@ int main(int argc, char **argv)
     
     fclose(positions_fp);
     fclose(fields_fp);
+    fclose(charges_fp);
 
     return(0); /* THE END! */
 }

@@ -13,7 +13,8 @@ void initialise_distn_box(struct particles *charges,
 			  int size,
 			  double dx,
 			  double dy,
-			  double dz){
+			  double dz,
+			  FILE *charges_fp){
 
     int i; // loop variable
 
@@ -30,9 +31,10 @@ void initialise_distn_box(struct particles *charges,
 }
 
 void initialise_distn_sphere(struct particles *charges,
-                       int nparticles,
-                       int size,
-                       double dx){
+			     int nparticles,
+			     int size,
+			     double dx,
+			     FILE *charges_fp){
 
     int i; // loop variable
     double offset = size*dx*0.5;
@@ -47,6 +49,12 @@ void initialise_distn_sphere(struct particles *charges,
         charges[i].u[0]=0.0;
         charges[i].u[1]=0.0;
         charges[i].u[2]=0.0;
-        charges[i].q=1.0;
+	//        charges[i].q=1.0;
+	if (pick_rand() >= 0.5){
+	  charges[i].q=1.0;
+	}else{
+	  charges[i].q=-1.0;
+	}
+	fprintf(charges_fp,"%f\n",charges[i].q);
     }
 }

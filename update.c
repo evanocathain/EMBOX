@@ -21,10 +21,10 @@ void update_field_current(struct particles *charges,
       z_pos=(int)charges[i].x[2];
 
       // update the relevant field location
-      fields[x_pos][y_pos][z_pos].rho += q;
-      fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].u[0];
-      fields[x_pos][y_pos][z_pos].J[1]+=q*charges[i].u[1];
-      fields[x_pos][y_pos][z_pos].J[2]+=q*charges[i].u[2];
+      fields[x_pos][y_pos][z_pos].rho += q*charges[i].q;
+      fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].q*charges[i].u[0];
+      fields[x_pos][y_pos][z_pos].J[1]+=q*charges[i].q*charges[i].u[1];
+      fields[x_pos][y_pos][z_pos].J[2]+=q*charges[i].q*charges[i].u[2];
     }
 
 }
@@ -167,7 +167,7 @@ void update_charge_posns(struct particles *charges,
       charges[i].u[0] += ax*dt;
       charges[i].u[1] += ay*dt;
       charges[i].u[2] += az*dt;
-      if ((charges[i].x[0] >= (size-1)*dx) || (charges[i].x[1] >= (size-1)*dy) || (charges[i].x[2] >= (size-1)*dz) || (charges[i].x[0] <= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
+      if ((charges[i].x[0] >= size*dx) || (charges[i].x[1] >= size*dy) || (charges[i].x[2] >= size*dz) || (charges[i].x[0] <= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
 	charges[i].x[0] = size*dx*0.5;
 	charges[i].x[1] = size*dy*0.5;
 	charges[i].x[2] = size*dz*0.5;
