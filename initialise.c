@@ -20,9 +20,9 @@ void initialise_distn_box(struct particles *charges,
 
     for (i=0; i<nparticles; i++){
         // initialise all particles
-        charges[i].x[0]=(size-1)*dx*pick_rand();
-        charges[i].x[1]=(size-1)*dy*pick_rand();
-        charges[i].x[2]=(size-1)*dz*pick_rand();
+        charges[i].x[0]=(size)*dx*pick_rand();
+        charges[i].x[1]=(size)*dy*pick_rand();
+        charges[i].x[2]=(size)*dz*pick_rand();
         charges[i].u[0]=0;
         charges[i].u[1]=0;
         charges[i].u[2]=0;

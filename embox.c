@@ -31,13 +31,13 @@ int main(int argc, char **argv)
 {
     // set default values for VARS
     int NPARTICLES = 10, SIZE=10, NSTEPS=10000;
+    double B0=5.0e-1,dx=0.03,dy=0.03,dz=0.03;
 
     int i,j,k,n;
     int dump_fields=0,dump_posns=1;
     int mode=0;
-    double dt=1e-11,dx=0.03,dy=0.03,dz=0.03;
+    double dt=1e-11;
     double r,x,y,z,radius=dx,offset;
-    double B0=5.0e-1;
     double mu0=4.0*M_PI*10.0e-7,epsilon0=1.0/(mu0*CSQUARED);
     FILE *positions_fp,*charges_fp,*fields_fp;
 
@@ -166,13 +166,13 @@ int main(int argc, char **argv)
 	  fields[i][j][k].B[1]=0.0;
 	  fields[i][j][k].B[2]=0.0;
 	}else {
-	  r=sqrt(pow(x,2)+pow(y,2)+pow(z,2));
+	  r=sqrt(pow(x,2.0)+pow(y,2.0)+pow(z,2.0));
 	  fields[i][j][k].E[0]=0.0;
 	  fields[i][j][k].E[1]=0.0;
 	  fields[i][j][k].E[2]=0.0;
-	  fields[i][j][k].B[0]=B0*(pow(radius,3)/pow(r,5))*3.0*x*z;
-	  fields[i][j][k].B[1]=B0*(pow(radius,3)/pow(r,5))*3.0*y*z;
-	  fields[i][j][k].B[2]=B0*(pow(radius,3)/pow(r,5))*(3.0*pow(z,2)-pow(r,2));
+	  fields[i][j][k].B[0]=B0*(pow(radius,3.0)/pow(r,5.0))*3.0*x*z;
+	  fields[i][j][k].B[1]=B0*(pow(radius,3.0)/pow(r,5.0))*3.0*y*z;
+	  fields[i][j][k].B[2]=B0*(pow(radius,3.0)/pow(r,5.0))*(3.0*pow(z,2.0)-pow(r,2.0));
 	}
 	fprintf(fields_fp,"Bx= %.15lf By= %.15lf Bz= %.15lf x= %lf y= %lf z= %lf\n",fields[i][j][k].B[0],fields[i][j][k].B[1],fields[i][j][k].B[2],x,y,z);
 	fields[i][j][k].J[0]=0.0;
