@@ -26,4 +26,11 @@ void update_charge_posns(struct particles *charges,
 
 void resetfield_rho_j(struct grid ***fields, int size);
 
+double trilin_interp_E(struct grid ***fields,
+                     struct particles *charges,
+                     int size,
+                     int unit_vec,
+                     double xpos,
+                     double ypos,
+                     double zpos);
 #endif

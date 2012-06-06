@@ -121,6 +121,56 @@ void update_field_strength(struct grid ***fields,
     } // end of i loop
 }
 
+double trilin_interp_E(struct grid ***fields,
+                     struct particles *charges,
+                     int size,
+                     int unit_vec,
+                     double xpos,
+                     double ypos,
+                     double zpos){
+
+    double c00, c10, c01, c11;
+    double c0, c1, c;
+    // Using convention from wikipedia
+    // http://en.wikipedia.org/wiki/Trilinear_interpolation
+    // (don't pretend you would have looked it up anywhere else!)
+    double xd, yd, zd;
+    int x0, y0, z0;
+    int x1, y1, z1;
+
+    x0 = (int)xpos;
+    x1 = ceil(xpos);
+
+    y0 = (int)ypos;
+    y1 = ceil(ypos);
+
+    z0 = (int)zpos;
+    z1 = ceil(zpos);
+
+    xd = (xpos - x0)/(x1 - x0);
+    yd = (ypos - y0)/(y1 - y0);
+    zd = (zpos - z0)/(z1 - z0);
+
+    // start interpolating in x
+    c00 = fields[x0][y0][z0].E[unit_vec] * (1.0 - xd) +
+                    fields[x1][y0][z0].E[unit_vec] * xd;
+    c10 = fields[x0][y1][z0].E[unit_vec] * (1.0 - xd) +
+                    fields[x1][y1][z0].E[unit_vec] * xd;
+    c01 = fields[x0][y0][z1].E[unit_vec] * (1.0 - xd) +
+                    fields[x1][y0][z1].E[unit_vec] * xd;
+    c11 = fields[x0][y1][z1].E[unit_vec] * (1.0 - xd) +
+                    fields[x1][y1][z1].E[unit_vec] * xd;
+
+    // interpolate in y
+    c0 = c00 * (1.0 - yd) + c10 * yd;
+    c1 = c01 * (1.0 - yd) + c11 * yd;
+
+    // interpolate in z
+    c = c0 * (1.0 - zd) + c1 * zd;
+
+    return c;
+}
+
 void update_charge_posns(struct particles *charges,
 			 struct grid ***fields,
 			 int nparticles,
@@ -140,51 +190,68 @@ void update_charge_posns(struct particles *charges,
     const double q_to_m=1.75882017e11; 
     
     for (i=0; i<nparticles; i++){
-      // Currently using (int) cast
-      // probably can do something more complex here
-      x_pos = (int)(charges[i].x[0]/dx);
-      y_pos = (int)(charges[i].x[1]/dy);
-      z_pos = (int)(charges[i].x[2]/dz);
-      Ex=fields[x_pos][y_pos][z_pos].E[0];
-      Ey=fields[x_pos][y_pos][z_pos].E[1];
-      Ez=fields[x_pos][y_pos][z_pos].E[2];
-      Bx=fields[x_pos][y_pos][z_pos].B[0];
-      By=fields[x_pos][y_pos][z_pos].B[1];
-      Bz=fields[x_pos][y_pos][z_pos].B[2];
-
-      /* Calculate accelerations */
-      ax = (q_to_m)*charges[i].q*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
-      ay = (q_to_m)*charges[i].q*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
-      az = (q_to_m)*charges[i].q*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
-      
-      /* update positions & velocities */
-      x_update = charges[i].u[0]*dt+(0.5)*ax*dt*dt;
-      y_update = charges[i].u[1]*dt+(0.5)*ay*dt*dt;
-      z_update = charges[i].u[2]*dt+(0.5)*az*dt*dt;
-      charges[i].x[0] += x_update;
-      charges[i].x[1] += y_update;
-      charges[i].x[2] += z_update;
-      charges[i].u[0] += ax*dt;
-      charges[i].u[1] += ay*dt;
-      charges[i].u[2] += az*dt;
-      /*      charges[i].u[0] += 0.5*ax*dt;
-      charges[i].u[1] += 0.5*ay*dt;
-      charges[i].u[2] += 0.5*az*dt;
-      charges[i].x[0] += charges[i].u[0]*dt;
-      charges[i].x[1] += charges[i].u[1]*dt;
-      charges[i].x[2] += charges[i].u[2]*dt;*/
-      if ((charges[i].x[0] >= size*dx) || (charges[i].x[1] >= size*dy) || (charges[i].x[2] >= size*dz) || (charges[i].x[0] <= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
-	charges[i].x[0] = size*dx*0.5;
-	charges[i].x[1] = size*dy*0.5;
-	charges[i].x[2] = size*dz*0.5;
-	charges[i].u[0] = 0.0;
-	charges[i].u[1] = 0.0;
-	charges[i].u[2] = 0.0;
+        if ((charges[i].x[0]  >= size*dx) || (charges[i].x[1] >= size*dy) || (charges[i].x[2] >= size*dz) || (charges[i].x[0]<= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
+            charges[i].x[0] = size*dx*0.5;
+            charges[i].x[1] = size*dy*0.5;
+            charges[i].x[2] = size*dz*0.5;
+            charges[i].u[0] = 0.0;
+            charges[i].u[1] = 0.0;
+            charges[i].u[2] = 0.0;
       }
-      //      printf("%f %f %f\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+    else{
+        // Currently using (int) cast
+        // probably can do something more complex here
+        x_pos = (int)(charges[i].x[0]/dx);
+        y_pos = (int)(charges[i].x[1]/dy);
+        z_pos = (int)(charges[i].x[2]/dz);
+        /*
+        Ex=fields[x_pos][y_pos][z_pos].E[0];
+        Ey=fields[x_pos][y_pos][z_pos].E[1];
+        Ez=fields[x_pos][y_pos][z_pos].E[2];
+        */
+        Bx=fields[x_pos][y_pos][z_pos].B[0];
+        By=fields[x_pos][y_pos][z_pos].B[1];
+        Bz=fields[x_pos][y_pos][z_pos].B[2];
+        // try using the trilinear interpolation
+        Ex = trilin_interp_E(fields, charges, size, 0,
+                          charges[i].x[0]/dx, 
+                          charges[i].x[1]/dy,
+                          charges[i].x[2]/dz);
+        Ey =  trilin_interp_E(fields, charges, size, 1,
+                          charges[i].x[0]/dx, 
+                          charges[i].x[1]/dy,
+                          charges[i].x[2]/dz);
+        Ez =  trilin_interp_E(fields, charges, size, 2,
+                          charges[i].x[0]/dx, 
+                          charges[i].x[1]/dy,
+                          charges[i].x[2]/dz);
+
+        /* Calculate accelerations */
+        ax = (q_to_m)*charges[i].q*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
+        ay = (q_to_m)*charges[i].q*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
+        az = (q_to_m)*charges[i].q*(Ez + charges[i].u[0]*By - charges[i].u[1]*Bx);
       
-      if (dump == 1){
-	fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+        /* update positions & velocities */
+        x_update = charges[i].u[0]*dt+(0.5)*ax*dt*dt;
+        y_update = charges[i].u[1]*dt+(0.5)*ay*dt*dt;
+        z_update = charges[i].u[2]*dt+(0.5)*az*dt*dt;
+        charges[i].x[0] += x_update;
+        charges[i].x[1] += y_update;
+        charges[i].x[2] += z_update;
+        charges[i].u[0] += ax*dt;
+        charges[i].u[1] += ay*dt;
+        charges[i].u[2] += az*dt;
+        /*      charges[i].u[0] += 0.5*ax*dt;
+        charges[i].u[1] += 0.5*ay*dt;
+        charges[i].u[2] += 0.5*az*dt;
+        charges[i].x[0] += charges[i].u[0]*dt;
+        charges[i].x[1] += charges[i].u[1]*dt;
+        charges[i].x[2] += charges[i].u[2]*dt;*/
+
+        //      printf("%f %f %f\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+    }
+    if (dump == 1){
+	    fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
       }
     }
 }
