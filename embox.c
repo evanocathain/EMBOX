@@ -205,7 +205,7 @@ int main(int argc, char **argv)
         /* 1. Calculate rho & J */
         // need to zero rho and J everywhere before calculating each time
         // maybe do it as last thing in time evo. loop somehow
-        update_field_current(charges, fields, NPARTICLES);
+        update_field_current(charges, fields, NPARTICLES, dx, dy, dz);
       
         // use rho & J to calculate update E and B fields using the curl equations
         // loop over i,j,k inside the function

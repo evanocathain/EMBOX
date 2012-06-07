@@ -3,7 +3,10 @@
 
 void update_field_current(struct particles *charges,
                           struct grid ***fields,
-                          int nparticles);
+                          int nparticles,
+                          double dx,
+                          double dy,
+                          double dz);
 
 void update_field_strength(struct grid ***fields,
 			   int size, 

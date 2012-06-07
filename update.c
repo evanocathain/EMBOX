@@ -9,17 +9,21 @@
 
 void update_field_current(struct particles *charges,
                           struct grid ***fields,
-                          int nparticles){
+                          int nparticles,
+                          double dx,
+                          double dy, 
+                          double dz){
 
     double q = 1.60217646e-19;
     int i, x_pos, y_pos, z_pos;  // loop var
 
     for(i=0; i<nparticles; i++){
       // get approximate charge position in 3-D
-      x_pos=(int)(charges[i].x[0]);
-      y_pos=(int)(charges[i].x[1]);
-      z_pos=(int)(charges[i].x[2]);
+      x_pos=(int)(charges[i].x[0]/dx);
+      y_pos=(int)(charges[i].x[1]/dy);
+      z_pos=(int)(charges[i].x[2]/dz);
 
+        //fprintf(stdout, "%i\t%i\t%i\n", x_pos, y_pos, z_pos);
       // update rho and J for the relevant field location
       fields[x_pos][y_pos][z_pos].rho += q*charges[i].q;
       fields[x_pos][y_pos][z_pos].J[0]+=q*charges[i].q*charges[i].u[0];
@@ -137,20 +141,70 @@ double trilin_interp_E(struct grid ***fields,
     double xd, yd, zd;
     int x0, y0, z0;
     int x1, y1, z1;
+    double sum;
 
-    x0 = (int)xpos;
+    x0 = floor(xpos);
     x1 = ceil(xpos);
 
-    y0 = (int)ypos;
+    y0 = floor(ypos);
     y1 = ceil(ypos);
 
-    z0 = (int)zpos;
+    z0 = floor(zpos);
     z1 = ceil(zpos);
+    //fprintf(stderr, "xp %lf yp %lf zp %lf \n", xpos, ypos, zpos);
 
+    // Need to check if floor == ceil, the code will break.
+    // ie is the point on a plane, an edge, or a vertex in the grid?
+    // THIS IS HORRIBLE
+    if (x0 == x1){
+        if (y0 == y1){
+            if (z0 == z1){
+                // on a vertex, return the value there
+                return fields[x0][y0][z0].E[unit_vec];
+            }
+            else{
+                // on an edge - average in z space
+                sum = fields[x0][y0][z0].E[unit_vec] + fields[x0][y0][z1].E[unit_vec];
+                return sum/2.0;
+            }
+        }
+        else if (z0 == z1){
+            // edge - average in y space
+            sum = fields[x0][y0][z0].E[unit_vec] + fields[x0][y1][z0].E[unit_vec];
+            return sum/2.0;
+        }
+        else{
+            // on a plane - average four points
+            sum = fields[x0][y0][z0].E[unit_vec] + fields[x0][y1][z0].E[unit_vec]
+                + fields[x0][y0][z1].E[unit_vec] + fields[x0][y1][z1].E[unit_vec];
+            return sum/4.0;
+        }
+    }
+    else if (y0 == y1){
+        if (z0==z1){
+            // return x-space average
+            sum = fields[x0][y0][z0].E[unit_vec] + fields[x1][y0][z0].E[unit_vec];
+            return sum/2.0;
+        }
+        else{
+            // on a plane - average four points
+            sum = fields[x0][y0][z0].E[unit_vec] + fields[x1][y0][z0].E[unit_vec]
+                + fields[x0][y0][z1].E[unit_vec] + fields[x1][y0][z1].E[unit_vec];
+            return sum/4.0;
+        }
+    }
+    else if (z0 == z1){
+        sum = fields[x0][y0][z0].E[unit_vec] + fields[x1][y0][z0].E[unit_vec]
+                + fields[x0][y1][z0].E[unit_vec] + fields[x1][y1][z0].E[unit_vec];
+        return sum/4.0;
+    }
+    // Reached here? No matches, do full interpolation
+    
     xd = (xpos - x0)/(x1 - x0);
     yd = (ypos - y0)/(y1 - y0);
     zd = (zpos - z0)/(z1 - z0);
 
+    //fprintf(stderr, "x1 %i y1 %i z1 %i x0 %i y0 %i z0 %i\n", x1, y1, z1, x0, y0, z0);
     // start interpolating in x
     c00 = fields[x0][y0][z0].E[unit_vec] * (1.0 - xd) +
                     fields[x1][y0][z0].E[unit_vec] * xd;
@@ -160,6 +214,7 @@ double trilin_interp_E(struct grid ***fields,
                     fields[x1][y0][z1].E[unit_vec] * xd;
     c11 = fields[x0][y1][z1].E[unit_vec] * (1.0 - xd) +
                     fields[x1][y1][z1].E[unit_vec] * xd;
+    //fprintf(stderr, "x %i y %i z %i xd %lf yd %lf zd %lf\n", x0, y0, z0, xd, yd, zd);
 
     // interpolate in y
     c0 = c00 * (1.0 - yd) + c10 * yd;
@@ -168,6 +223,8 @@ double trilin_interp_E(struct grid ***fields,
     // interpolate in z
     c = c0 * (1.0 - zd) + c1 * zd;
 
+    //fprintf(stderr, "c00 %lf\tc01 %lf\tc10 %lf\tc11 %lf\n", c00, c01, c10, c11);
+    //fprintf(stderr, "c: %lf\t%lf\n", c0, c1);
     return c;
 }
 
@@ -184,14 +241,15 @@ void update_charge_posns(struct particles *charges,
   
     int i; // loop vars
     int x_pos, y_pos, z_pos;
-    double Ex, Ey, Ez, Bx, By, Bz; // em fields
+    double Ex, Ey, Ez, Bx, By, Bz, Exi; // em fields
     double ax, ay, az; // accelerations
     double x_update, y_update, z_update;
     const double q_to_m=1.75882017e11; 
     
     for (i=0; i<nparticles; i++){
-        if ((charges[i].x[0]  >= size*dx) || (charges[i].x[1] >= size*dy) || (charges[i].x[2] >= size*dz) || (charges[i].x[0]<= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
+        if ((charges[i].x[0] +1.0*dx >= size*dx) || (charges[i].x[1] +1.*dx >= size*dy) || (charges[i].x[2]+1.*dx >= size*dz) || (charges[i].x[0]<= 0.0) || (charges[i].x[1] <= 0.0) || (charges[i].x[2] <= 0.0)){
             charges[i].x[0] = size*dx*0.5;
+            fprintf(stdout, "%lf\t%lf\n", charges[i].x[0] +1.0*dx, size*dx);
             charges[i].x[1] = size*dy*0.5;
             charges[i].x[2] = size*dz*0.5;
             charges[i].u[0] = 0.0;
@@ -217,15 +275,18 @@ void update_charge_posns(struct particles *charges,
                           charges[i].x[0]/dx, 
                           charges[i].x[1]/dy,
                           charges[i].x[2]/dz);
-        Ey =  trilin_interp_E(fields, charges, size, 1,
+        //fprintf(stderr, "E: %.9lf\t%.9lf\n", Ex, Exi);
+                          
+        Ey = trilin_interp_E(fields, charges, size, 1,
                           charges[i].x[0]/dx, 
                           charges[i].x[1]/dy,
                           charges[i].x[2]/dz);
-        Ez =  trilin_interp_E(fields, charges, size, 2,
+        Ez = trilin_interp_E(fields, charges, size, 2,
                           charges[i].x[0]/dx, 
                           charges[i].x[1]/dy,
                           charges[i].x[2]/dz);
-
+        
+        
         /* Calculate accelerations */
         ax = (q_to_m)*charges[i].q*(Ex + charges[i].u[1]*Bz - charges[i].u[2]*By);
         ay = (q_to_m)*charges[i].q*(Ey + charges[i].u[2]*Bx - charges[i].u[0]*Bz);
@@ -235,6 +296,7 @@ void update_charge_posns(struct particles *charges,
         x_update = charges[i].u[0]*dt+(0.5)*ax*dt*dt;
         y_update = charges[i].u[1]*dt+(0.5)*ay*dt*dt;
         z_update = charges[i].u[2]*dt+(0.5)*az*dt*dt;
+        //fprintf(stderr,"%lf\t%lf\t%lf\t%lf\n", charges[i].x[0]/dx, charges[i].x[1]/dy, charges[i].x[2]/dz,x_update);
         charges[i].x[0] += x_update;
         charges[i].x[1] += y_update;
         charges[i].x[2] += z_update;
@@ -251,7 +313,7 @@ void update_charge_posns(struct particles *charges,
         //      printf("%f %f %f\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
     }
     if (dump == 1){
-	    fprintf(positions,"%lf %lf %lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
+	    fprintf(positions,"%.9lf %.9lf %.9lf\n",charges[i].x[0],charges[i].x[1],charges[i].x[2]);
       }
     }
 }
